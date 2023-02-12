@@ -15,7 +15,7 @@ shared_ptr<Message> parseDelimited(const void * data, size_t size, size_t * byte
     uint32_t length = 0;
     google::protobuf::io::CodedInputStream cis(reinterpret_cast<const uint8_t *>(data), size);
     cis.ReadVarint32(&length);
-    cis.PopLimit(length + cis.CurrentPosition());
+    auto limit = cis.PushLimit(length);
     
     if (length + cis.CurrentPosition() > size) {
         return nullptr;
@@ -27,6 +27,7 @@ shared_ptr<Message> parseDelimited(const void * data, size_t size, size_t * byte
     
     shared_ptr<Message> message = std::make_shared<Message>();
     if(message->ParseFromCodedStream(&cis) && cis.ConsumedEntireMessage()) {
+        cis.PopLimit(limit);
         return message;
     }
     return nullptr;
